@@ -40,6 +40,15 @@ namespace ImageLabeller {
         protected global::System.Web.UI.WebControls.RadioButtonList radioButtonList;
         
         /// <summary>
+        /// otherTextBox control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox otherTextBox;
+        
+        /// <summary>
         /// btn control.
         /// </summary>
         /// <remarks>
@@ -47,6 +56,15 @@ namespace ImageLabeller {
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Button btn;
+        
+        /// <summary>
+        /// skipBtn control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button skipBtn;
         
         /// <summary>
         /// label1 control.
