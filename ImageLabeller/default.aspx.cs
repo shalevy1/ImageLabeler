@@ -1,4 +1,4 @@
-﻿using ImageLabeller.Models;
+using ImageLabeller.Models;
 using ImageLabeller.Properties;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -17,29 +17,42 @@ namespace ImageLabeller
     public partial class _default : System.Web.UI.Page
     {
         public MongoDatabase mongoDatabase;
-        public MongoCollection ResponseCollection;
-        public MongoCollection GridFsCollection;
-        public static string imgID { get; set; }
-        public static string imgUrl { get; set; }
+        public MongoDatabase gridFSDatabase;
 
-        public MongoDatabase mongoImage;
-        public bool serverIsDown = false;
+        public MongoCollection mongoCollection;
+        public MongoCollection gridFsCollection;
+
+        public static string ImgID { get; set; }
+        public static string ImgUrl { get; set; }
 
         protected void Page_Load(object sender, EventArgs e)
         {
             ConnectDB();
 
-            image.ImageUrl = getImageUrl();
+            image.ImageUrl = GetImageUrl();
+        }
+
+        protected void btn_Click(object sender, EventArgs e)
+        {
+
+            string label = otherTextBox.Text != "" ? otherTextBox.Text : radioButtonList.SelectedValue;
+
+            SaveImageToGridFs(label);
+
+            var result = mongoCollection.Remove(Query.EQ("_id", BsonObjectId.Parse(ImgID)));
+
+            Response.Redirect(Request.RawUrl);
+
         }
 
         private void ConnectDB()
         {
             try
             {
-                var mongoClient = new MongoClient("conStr"); // Connection String
+                var mongoClient = new MongoClient("mongodb://localhost"); // Connection String
                 var server = mongoClient.GetServer();
                 mongoDatabase = server.GetDatabase("justurl"); // Database Name 
-                ResponseCollection = mongoDatabase.GetCollection("Url"); // Collection name
+                mongoCollection = mongoDatabase.GetCollection("Url"); // Collection name
             }
             catch (Exception)
             {
@@ -48,82 +61,14 @@ namespace ImageLabeller
 
         }
 
-        protected void btn_Click(object sender, EventArgs e)
-        {
-            string label;
-            if (otherTextBox.Text!="")
-            {
-                label = otherTextBox.Text;
-            }
-            else
-            {
-                label = radioButtonList.SelectedValue;
-            }
-            
-            try
-            {
-                var mongoClient = new MongoClient("conStr"); // Connection String
-                var server = mongoClient.GetServer();
-                mongoImage = server.GetDatabase("gridfsimage"); // Database Name 
-
-                GridFsCollection = mongoImage.GetCollection("fs.files");
-
-                // Get image from URL or API    
-                WebRequest req = System.Net.WebRequest.Create(imgUrl);
-                WebResponse response = req.GetResponse();
-                Response.Write("Response length is " + response.ContentLength + " bytes");
-
-                // Copy from WebResponse to MemoryStream
-                MemoryStream memStream;
-                using (Stream responseStream = response.GetResponseStream())
-                {
-                    memStream = new MemoryStream();
-
-                    byte[] buffer = new byte[1024];
-                    int byteCount;
-                    do
-                    {
-                        byteCount = responseStream.Read(buffer, 0, buffer.Length);
-                        memStream.Write(buffer, 0, byteCount);
-                    } while (byteCount > 0);
-                    responseStream.Close();
-                }
-
-                // Reset to beginning of stream
-                memStream.Seek(0, SeekOrigin.Begin);
-
-                // Save to GridFS    
-                var gridFsInfo = mongoImage.GridFS.Upload(memStream, imgUrl);
-                string gridFsImageID = gridFsInfo.Id.ToString();
-
-                UpdateBuilder updateBuilder = MongoDB.Driver.Builders.Update
-                    .Set("category", label);
-                GridFsCollection.Update(Query.EQ("_id", BsonObjectId.Parse(gridFsImageID)), updateBuilder);
-
-                // Success!
-                Response.Write("Success");
-
-
-            }
-            catch (Exception err)
-            {
-                Response.Write("Something went wrong: " + err.Message);
-            }
-
-            var result = ResponseCollection.Remove(Query.EQ("_id", BsonObjectId.Parse(imgID)));
-
-            Response.Redirect(Request.RawUrl);
-
-        }
-
-        public string getImageUrl()
+        public string GetImageUrl()
         {
             try
             {
-                var urls = (Url)ResponseCollection.FindOneAs(typeof(Url), Query.NE("id", "null")); // This code gives first record on db.
-                imgUrl = urls.image;
-                imgID = urls._id;
-                return imgUrl;
+                var url = (Url)mongoCollection.FindOneAs(typeof(Url), Query.NE("id", "null")); // This code gives first record on db.
+                ImgUrl = url.image;
+                ImgID = url._id;
+                return ImgUrl;
             }
             catch (Exception)
             {
@@ -134,22 +79,66 @@ namespace ImageLabeller
             }
 
 
+        }
 
+        private void SaveImageToGridFs(string label)
+        {
+            try
+            {
+                var mongoClient = new MongoClient("mongodb://localhost"); // Connection String
+                var server = mongoClient.GetServer();
+                gridFSDatabase = server.GetDatabase("gridfsimage"); // Database Name 
 
+                // Get image from URL or API    
+                WebRequest webRequest = System.Net.WebRequest.Create(ImgUrl);
+                WebResponse webResponse = webRequest.GetResponse();
+                Response.Write("Response length is " + webResponse.ContentLength + " bytes");
+
+                // Copy from WebResponse to MemoryStream
+                MemoryStream memoryStream;
+                using (Stream responseStream = webResponse.GetResponseStream())
+                {
+                    memoryStream = new MemoryStream();
+
+                    byte[] buffer = new byte[1024];
+                    int byteCount;
+                    do
+                    {
+                        byteCount = responseStream.Read(buffer, 0, buffer.Length);
+                        memoryStream.Write(buffer, 0, byteCount);
+                    } while (byteCount > 0);
+                    responseStream.Close();
+                }
+
+                // Reset to beginning of stream
+                memoryStream.Seek(0, SeekOrigin.Begin);
+
+                // Save to GridFS    
+                var gridFsInfo = gridFSDatabase.GridFS.Upload(memoryStream, ImgUrl);
+                string gridFsImageID = gridFsInfo.Id.ToString();
+
+                gridFsCollection = gridFSDatabase.GetCollection("fs.files");
+
+                UpdateBuilder updateBuilder = MongoDB.Driver.Builders.Update
+                    .Set("category", label);
+                gridFsCollection.Update(Query.EQ("_id", BsonObjectId.Parse(gridFsImageID)), updateBuilder);
+
+            }
+            catch (Exception err)
+            {
+                Response.Write("Something went wrong: " + err.Message);
+            }
         }
 
         protected void skipBtn_Click(object sender, EventArgs e)
         {
-            var result = ResponseCollection.Remove(Query.EQ("_id", BsonObjectId.Parse(imgID)));
+            var queryResult = mongoCollection.Remove(Query.EQ("_id", BsonObjectId.Parse(ImgID)));
             Response.Redirect(Request.RawUrl);
         }
 
         protected void radioButtonList_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (radioButtonList.SelectedIndex == 3)
-            {
-                otherTextBox.Visible = true;
-            }
+            otherTextBox.Visible = radioButtonList.SelectedIndex ==3 ? true:false;
         }
     }
 }
