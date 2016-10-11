@@ -94,6 +94,15 @@ namespace ImageLabeller {
         protected global::System.Web.UI.WebControls.Button skipBtn;
         
         /// <summary>
+        /// reportImage control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.LinkButton reportImage;
+        
+        /// <summary>
         /// lblCount control.
         /// </summary>
         /// <remarks>

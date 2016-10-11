@@ -1,6 +1,7 @@
 using ImageLabeller.Models;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using MongoDB.Driver.GridFS;
 using MongoDB.Driver.Builders;
 using System;
 using System.IO;
@@ -46,7 +47,7 @@ namespace ImageLabeller
         {
             try
             {
-                var mongoClient = new MongoClient("conStr"); // Connection String
+                var mongoClient = new MongoClient("mongodb://omeryasin32:AkifEminOmer34@ds145355.mlab.com:45355/justurl"); // Connection String
                 var server = mongoClient.GetServer();
                 mongoDatabase = server.GetDatabase("justurl"); // Database Name 
                 mongoCollection = mongoDatabase.GetCollection("Url"); // Collection name
@@ -84,7 +85,7 @@ namespace ImageLabeller
         {
             try
             {
-                var mongoClient = new MongoClient("conStr"); // Connection String
+                var mongoClient = new MongoClient("mongodb://omeryasin32:AkifEminOmer34@ds145325.mlab.com:45325/gridfsimage"); // Connection String
                 var server = mongoClient.GetServer();
                 gridFSDatabase = server.GetDatabase("gridfsimage"); // Database Name 
 
@@ -126,14 +127,32 @@ namespace ImageLabeller
                     .Set("category", label);
                 gridFsCollection.Update(Query.EQ("_id", BsonObjectId.Parse(gridFsImageID)), updateBuilder);
 
-
-
             }
             catch (Exception err)
             {
                 Response.Write("Something went wrong: " + err.Message);
             }
         }
+
+        private void DownloadDataFromGridFS()
+        {
+            ObjectId oid = new ObjectId("57ebabc091b6ce16d08cdfb8");
+            var file = gridFSDatabase.GridFS.FindOne(Query.EQ("_id", oid));
+
+            var newFileName = "D:\\new_Untitled.png";
+
+            using (var stream = file.OpenRead())
+            {
+                var bytes = new byte[stream.Length];
+                stream.Read(bytes, 0, (int)stream.Length);
+                using (var newFs = new FileStream(newFileName, FileMode.Create))
+                {
+                    newFs.Write(bytes, 0, bytes.Length);
+                }
+            }
+        }
+
+
 
         protected void skipBtn_Click(object sender, EventArgs e)
         {
@@ -160,6 +179,11 @@ namespace ImageLabeller
                 form1.Visible = false;
             }
 
+
+        }
+
+        protected void reportImage_Click(object sender, EventArgs e)
+        {
 
         }
     }
