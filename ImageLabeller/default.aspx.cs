@@ -5,6 +5,9 @@ using MongoDB.Driver.GridFS;
 using MongoDB.Driver.Builders;
 using System;
 using System.IO;
+using System.Threading.Tasks;
+using FluentAssertions;
+using MongoDB.Driver.Core;
 using System.Net;
 namespace ImageLabeller
 {
@@ -47,18 +50,22 @@ namespace ImageLabeller
         {
             try
             {
-                var mongoClient = new MongoClient("mongodb://omeryasin32:AkifEminOmer34@ds145355.mlab.com:45355/justurl"); // Connection String
+                var mongoClient = new MongoClient("mongodb://omeryasin32:AkifEminOmer34@ds055626.mlab.com:55626/11102016justurlbackup"); // Connection String
                 var server = mongoClient.GetServer();
-                mongoDatabase = server.GetDatabase("justurl"); // Database Name 
+                mongoDatabase = server.GetDatabase("11102016justurlbackup"); // Database Name 
                 mongoCollection = mongoDatabase.GetCollection("Url"); // Collection name
                 var countOfAdded = mongoCollection.Count(Query.EQ("category", "added"));
-                var countOfAll = mongoCollection.Count();
-                lblCount.Text = countOfAdded.ToString()+"/"+countOfAll.ToString();
+                var countOfAll = mongoCollection.Count(Query.EQ("category","notAdded"));
+                lblCount.Text = (countOfAdded+11).ToString() + "/" + countOfAll.ToString();
+
+
+
             }
             catch (Exception)
             {
                 Response.Write("Db Connection Error");
             }
+
 
         }
 
@@ -70,6 +77,7 @@ namespace ImageLabeller
 
                 ImgUrl = url.image;
                 ImgID = url._id;
+
                 return ImgUrl;
             }
             catch (Exception)
@@ -85,9 +93,9 @@ namespace ImageLabeller
         {
             try
             {
-                var mongoClient = new MongoClient("mongodb://omeryasin32:AkifEminOmer34@ds145325.mlab.com:45325/gridfsimage"); // Connection String
+                var mongoClient = new MongoClient("mongodb://omeryasin32:AkifEminOmer34@ds019628.mlab.com:19628/gridfs1"); // Connection String
                 var server = mongoClient.GetServer();
-                gridFSDatabase = server.GetDatabase("gridfsimage"); // Database Name 
+                gridFSDatabase = server.GetDatabase("gridfs1"); // Database Name 
 
                 // Get image from URL or API    
                 WebRequest webRequest = System.Net.WebRequest.Create(ImgUrl);
@@ -123,15 +131,21 @@ namespace ImageLabeller
                    .Set("category", "added");
                 mongoCollection.Update(Query.EQ("_id", BsonObjectId.Parse(ImgID)), updateBuilder2);
 
+
                 UpdateBuilder updateBuilder = MongoDB.Driver.Builders.Update
                     .Set("category", label);
                 gridFsCollection.Update(Query.EQ("_id", BsonObjectId.Parse(gridFsImageID)), updateBuilder);
+
+
+
 
             }
             catch (Exception err)
             {
                 Response.Write("Something went wrong: " + err.Message);
             }
+
+            
         }
 
         private void DownloadDataFromGridFS()
@@ -184,6 +198,25 @@ namespace ImageLabeller
 
         protected void reportImage_Click(object sender, EventArgs e)
         {
+
+            var update = new UpdateDocument
+            {
+                {"$set",new BsonDocument("category","multipleImage") }
+            };
+
+            var query = new QueryDocument
+            {
+                {"image",ImgUrl },
+                {"category","notAdded"}
+            };
+
+            mongoCollection.Update(query, update, new MongoUpdateOptions
+            {
+                Flags = UpdateFlags.Multi
+            }
+            );
+
+            Page_Load(null, EventArgs.Empty);
 
         }
     }
