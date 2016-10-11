@@ -50,7 +50,7 @@ namespace ImageLabeller
         {
             try
             {
-                var mongoClient = new MongoClient("mongodb://omeryasin32:AkifEminOmer34@ds055626.mlab.com:55626/11102016justurlbackup"); // Connection String
+                var mongoClient = new MongoClient(""); // Connection String
                 var server = mongoClient.GetServer();
                 mongoDatabase = server.GetDatabase("11102016justurlbackup"); // Database Name 
                 mongoCollection = mongoDatabase.GetCollection("Url"); // Collection name
@@ -93,7 +93,7 @@ namespace ImageLabeller
         {
             try
             {
-                var mongoClient = new MongoClient("mongodb://omeryasin32:AkifEminOmer34@ds019628.mlab.com:19628/gridfs1"); // Connection String
+                var mongoClient = new MongoClient(""); // Connection String
                 var server = mongoClient.GetServer();
                 gridFSDatabase = server.GetDatabase("gridfs1"); // Database Name 
 
