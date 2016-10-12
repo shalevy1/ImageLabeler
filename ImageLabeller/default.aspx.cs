@@ -21,6 +21,7 @@ namespace ImageLabeller
 
         public static string ImgID { get; set; }
         public static string ImgUrl { get; set; }
+        public static string ImgUrlNrml { get; set; }
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -77,7 +78,11 @@ namespace ImageLabeller
 
                 ImgUrl = url.image;
                 ImgID = url._id;
-                ImgUrl = ImgUrl.Replace("_normal", "");
+                ImgUrlNrml = url.image;
+                    if (ImgUrl.Contains("_normal")){
+                        ImgUrl = ImgUrl.Replace("_normal", "");
+                    }
+                
                 return ImgUrl;
             }
             catch (Exception)
@@ -206,7 +211,7 @@ namespace ImageLabeller
 
             var query = new QueryDocument
             {
-                {"image",ImgUrl },
+                {"image",ImgUrlNrml },
                 {"category","notAdded"}
             };
 
