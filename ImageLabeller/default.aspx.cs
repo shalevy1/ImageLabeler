@@ -79,6 +79,28 @@ namespace ImageLabeller
                 ImgUrl = url.image;
                 ImgID = url._id;
                 ImgUrlNrml = url.image;
+
+                HttpWebRequest request = WebRequest.Create(ImgUrl) as HttpWebRequest;
+
+                // instruct the server to return headers only
+                request.Method = "HEAD";
+
+                // make the connection
+
+                try
+                {
+                    HttpWebResponse response = request.GetResponse() as HttpWebResponse;
+                    HttpStatusCode status = response.StatusCode;
+                }
+                catch (Exception)
+                {
+                    UpdateBuilder updateBuilder2 = MongoDB.Driver.Builders.Update
+       .Set("category", "notFound");
+                    mongoCollection.Update(Query.EQ("_id", BsonObjectId.Parse(ImgID)), updateBuilder2);
+                    Page_Load(null, EventArgs.Empty);
+
+                }
+
                     if (ImgUrl.Contains("_normal")){
                         ImgUrl = ImgUrl.Replace("_normal", "");
                     }
